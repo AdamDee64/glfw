@@ -11,12 +11,15 @@ import "vendor:glfw"
 file_to_cstring :: proc(file : string) -> cstring {
 	// TODO - add error checking and move this procedure to it's own file
 	input, open_err := os.open(file)
-   u8_stream, read_err := os.read_entire_file_from_handle(input)
+	u8_stream, read_err := os.read_entire_file_from_handle(input)
 	os.close(input)
 	odin_string, clone_err := str.clone_from_bytes(u8_stream)
 	res, cstring_err := str.clone_to_cstring(odin_string)
 	return res
 }
+
+draw_triangle := false
+wireframe := false
 
 PROGRAM_NAME :: "Program"
 
@@ -30,6 +33,7 @@ fragment_shader_src := file_to_cstring("./shaders/fs.glsl")
 
 VBO : u32
 VAO : u32
+EBO : u32
 shader_program : u32
 
 // hello triangle
@@ -37,6 +41,18 @@ triangle := [9]f32 {
 	-0.5, -0.5, 0.0,
 	0.5, -0.5, 0.0,
 	0.0,  0.5, 0.0
+}
+
+rectangle := [12]f32 {
+	0.5,  0.5, 0.0,  // top right
+	0.5, -0.5, 0.0,  // bottom right
+	-0.5, -0.5, 0.0,  // bottom left
+	-0.5,  0.5, 0.0   // top left 
+}
+
+rect_i := [6]u32 {  // note that we start from 0!
+	0, 1, 3,   // first triangle
+	1, 2, 3    // second triangle
 }
 
 main :: proc() {
@@ -145,17 +161,35 @@ init :: proc(){
 
 	gl.GenBuffers(1, &VBO)
 	gl.GenVertexArrays(1, &VAO)
+	if(!draw_triangle){
+		gl.GenBuffers(1, &EBO)
+	}
 
 	gl.BindVertexArray(VAO)
 
 	gl.BindBuffer(gl.ARRAY_BUFFER, VBO)
-	gl.BufferData(gl.ARRAY_BUFFER, size_of(triangle), &triangle, gl.STATIC_DRAW)
+
+
+	if (draw_triangle) {
+		// triangle
+		gl.BufferData(gl.ARRAY_BUFFER, size_of(triangle), &triangle, gl.STATIC_DRAW)
+	} else {
+		// rectangle
+		gl.BufferData(gl.ARRAY_BUFFER, size_of(rectangle), &rectangle, gl.STATIC_DRAW)
+		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, EBO)
+		gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, size_of(rectangle), &rect_i, gl.STATIC_DRAW)
+	}
 
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 3 * size_of(f32), uintptr(0))
 	gl.EnableVertexAttribArray(0)
 
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 	gl.BindVertexArray(0)
+
+	if wireframe {
+		gl.PolygonMode(gl.FRONT_AND_BACK, gl.LINE)
+	}
+	
 
 }
 
@@ -172,7 +206,13 @@ draw :: proc(){
 
 	gl.UseProgram(shader_program)
 	gl.BindVertexArray(VAO)
-	gl.DrawArrays(gl.TRIANGLES, 0, 3)
+
+
+	if(draw_triangle) {
+		gl.DrawArrays(gl.TRIANGLES, 0, 3)
+	} else {
+		gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, rawptr(uintptr(0)))
+	}
 
 }
 
