@@ -2,26 +2,17 @@ package main
 
 import "core:fmt"
 import "core:c"
-import "core:os"
-import str "core:strings"
 
 import gl "vendor:OpenGL"
 import "vendor:glfw"
 
-file_to_cstring :: proc(file : string) -> cstring {
-	// TODO - add error checking and move this procedure to it's own file
-	input, open_err := os.open(file)
-	u8_stream, read_err := os.read_entire_file_from_handle(input)
-	os.close(input)
-	odin_string, clone_err := str.clone_from_bytes(u8_stream)
-	res, cstring_err := str.clone_to_cstring(odin_string)
-	return res
-}
 
+// ---- DEBUG ----
 draw_triangle := false
 wireframe := false
+// ---------------
 
-PROGRAM_NAME :: "Program"
+PROGRAM_NAME :: "Hello OpenGL"
 
 GL_MAJOR_VERSION : c.int : 3
 GL_MINOR_VERSION :: 3
@@ -88,12 +79,11 @@ main :: proc() {
 	
 	for (!glfw.WindowShouldClose(window) && running) {
 
-		glfw.PollEvents()
-		
 		update()
 		draw()
 
 		glfw.SwapBuffers((window))
+		glfw.PollEvents()
 	}
 
 	exit()
@@ -102,62 +92,7 @@ main :: proc() {
 
 init :: proc(){
 
-	shader_success : i32
-	vertex_shader := gl.CreateShader(gl.VERTEX_SHADER)
-	gl.ShaderSource(vertex_shader, 1, &vertex_shader_src, nil)
-	gl.CompileShader(vertex_shader)
-
-	gl.GetShaderiv(vertex_shader, gl.COMPILE_STATUS, &shader_success)
-
-	// TODO: make this into procedure since it's repeated 3 times. 
-	// Possibly make this entire shader loader into it's own procedure
-	if(shader_success == 0){
-		a : [^]u8
-		log : [512]u8
-		a = raw_data(log[:])
-		// this function requires an array pointer with a reserved amount of space to mimic how it's done in C
-		// this is how it's done in Odin.
-		gl.GetShaderInfoLog(vertex_shader, 512, nil, a)
-		log_string, clone_err := str.clone_from_bytes(log[:])
-		fmt.print(log_string)
-		
-	}
-
-	fragment_shader := gl.CreateShader(gl.FRAGMENT_SHADER)
-	gl.ShaderSource(fragment_shader, 1, &fragment_shader_src, nil)
-	gl.CompileShader(fragment_shader)
-
-	gl.GetShaderiv(fragment_shader, gl.COMPILE_STATUS, &shader_success)
-	if(shader_success == 0){
-		a : [^]u8
-		log : [512]u8
-		a = raw_data(log[:])
-		
-		gl.GetShaderInfoLog(fragment_shader, 512, nil, a)
-		log_string, clone_err := str.clone_from_bytes(log[:])
-		fmt.print(log_string)
-	}
-
-	
-	shader_program = gl.CreateProgram()
-	gl.AttachShader(shader_program, vertex_shader)
-	gl.AttachShader(shader_program, fragment_shader)
-	gl.LinkProgram(shader_program)
-	gl.GetProgramiv(shader_program, gl.LINK_STATUS, &shader_success)
-
-	if(shader_success == 0){
-		a : [^]u8
-		log : [512]u8
-		a = raw_data(log[:])
-		
-		gl.GetShaderInfoLog(shader_program, 512, nil, a)
-		log_string, clone_err := str.clone_from_bytes(log[:])
-		fmt.print(log_string)
-	}
-
-	gl.DeleteShader(vertex_shader)
-	gl.DeleteShader(fragment_shader)
-
+	load_shaders(&vertex_shader_src, &fragment_shader_src)
 
 	gl.GenBuffers(1, &VBO)
 	gl.GenVertexArrays(1, &VAO)
@@ -186,15 +121,15 @@ init :: proc(){
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 	gl.BindVertexArray(0)
 
-	if wireframe {
-		gl.PolygonMode(gl.FRONT_AND_BACK, gl.LINE)
-	}
+
 	
 
 }
 
 update :: proc(){
-	// Own update code here
+	if wireframe {
+		gl.PolygonMode(gl.FRONT_AND_BACK, gl.LINE)
+	}
 }
 
 draw :: proc(){
@@ -225,6 +160,8 @@ key_callback :: proc "c" (window: glfw.WindowHandle, key, scancode, action, mods
 	if key == glfw.KEY_ESCAPE {
 		running = false
 	}
+
+
 }
 
 size_callback :: proc "c" (window: glfw.WindowHandle, width, height: i32) {
