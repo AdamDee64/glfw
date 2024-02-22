@@ -41,9 +41,9 @@ rectangle := [12]f32 {
 	-0.5,  0.5, 0.0   // top left 
 }
 
-rect_i := [6]u32 {  // note that we start from 0!
-	0, 1, 3,   // first triangle
-	1, 2, 3    // second triangle
+rect_i := [6]u32 {  
+	0, 1, 3,   
+	1, 2, 3    
 }
 
 main :: proc() {
@@ -115,14 +115,11 @@ init :: proc(){
 		gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, size_of(rectangle), &rect_i, gl.STATIC_DRAW)
 	}
 
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 3 * size_of(f32), uintptr(0))
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 3 * size_of(f32), uintptr(0))  // Can't just type 0, it has to be a pointer to 0
 	gl.EnableVertexAttribArray(0)
 
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 	gl.BindVertexArray(0)
-
-
-	
 
 }
 
@@ -145,9 +142,9 @@ draw :: proc(){
 
 	if(draw_triangle) {
 		gl.DrawArrays(gl.TRIANGLES, 0, 3)
-	} else {
+	} else {//														  v what is this? v  ¯\_(ツ)_/¯
 		gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, rawptr(uintptr(0)))
-	}
+	}	
 
 }
 
@@ -155,13 +152,10 @@ exit :: proc(){
 	// Own termination code here
 }
 
-
 key_callback :: proc "c" (window: glfw.WindowHandle, key, scancode, action, mods: i32) {
 	if key == glfw.KEY_ESCAPE {
 		running = false
 	}
-
-
 }
 
 size_callback :: proc "c" (window: glfw.WindowHandle, width, height: i32) {
