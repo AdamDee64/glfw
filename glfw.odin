@@ -2,13 +2,14 @@ package main
 
 import "core:fmt"
 import "core:c"
+import "core:math"
 
 import gl "vendor:OpenGL"
 import "vendor:glfw"
 
 
 // ---- DEBUG ----
-draw_triangle := false
+draw_triangle := true
 wireframe := false
 // ---------------
 
@@ -115,7 +116,7 @@ init :: proc(){
 		gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, size_of(rectangle), &rect_i, gl.STATIC_DRAW)
 	}
 
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 3 * size_of(f32), uintptr(0))  // Can't just type 0, it has to be a pointer to 0
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 3 * size_of(f32), uintptr(0))
 	gl.EnableVertexAttribArray(0)
 
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
@@ -124,9 +125,13 @@ init :: proc(){
 }
 
 update :: proc(){
+
 	if wireframe {
 		gl.PolygonMode(gl.FRONT_AND_BACK, gl.LINE)
+	} else {
+		gl.PolygonMode(gl.FRONT_AND_BACK, gl.FILL)
 	}
+
 }
 
 draw :: proc(){
@@ -137,8 +142,15 @@ draw :: proc(){
 
 
 	gl.UseProgram(shader_program)
-	gl.BindVertexArray(VAO)
 
+	time_value := glfw.GetTime()
+	green_value : f32 = f32(math.sin(time_value)) / 2.0 + 0.5
+	vertex_color_location := gl.GetUniformLocation(shader_program, "our_color")
+	gl.Uniform4f(vertex_color_location, 0.0, green_value, 0.0, 1.0)
+
+
+
+	gl.BindVertexArray(VAO)
 
 	if(draw_triangle) {
 		gl.DrawArrays(gl.TRIANGLES, 0, 3)
@@ -156,6 +168,10 @@ key_callback :: proc "c" (window: glfw.WindowHandle, key, scancode, action, mods
 	if key == glfw.KEY_ESCAPE {
 		running = false
 	}
+	if (key == glfw.KEY_X  && action == glfw.RELEASE) {
+		wireframe = !wireframe
+	}
+
 }
 
 size_callback :: proc "c" (window: glfw.WindowHandle, width, height: i32) {
