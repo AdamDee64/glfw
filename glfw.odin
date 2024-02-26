@@ -58,8 +58,8 @@ main :: proc() {
 		fmt.println("Failed to initialize GLFW")
 		return
 	}
-
 	defer glfw.Terminate()
+
 	window := glfw.CreateWindow(512, 512, PROGRAM_NAME, nil, nil)
 	defer glfw.DestroyWindow(window)
 
