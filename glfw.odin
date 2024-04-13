@@ -9,7 +9,6 @@ import "vendor:glfw"
 
 
 // ---- DEBUG ----
-draw_triangle := true
 wireframe := false
 // ---------------
 
@@ -19,9 +18,6 @@ GL_MAJOR_VERSION : c.int : 3
 GL_MINOR_VERSION :: 3
 
 running : b32 = true
-
-vertex_shader_src := file_to_cstring("./shaders/vs.glsl")
-fragment_shader_src := file_to_cstring("./shaders/fs.glsl")
 
 VBO : u32
 VAO : u32
@@ -33,18 +29,6 @@ triangle := [9]f32 {
 	-0.5, -0.5, 0.0,
 	0.5, -0.5, 0.0,
 	0.0,  0.5, 0.0
-}
-
-rectangle := [12]f32 {
-	0.5,  0.5, 0.0,  // top right
-	0.5, -0.5, 0.0,  // bottom right
-	-0.5, -0.5, 0.0,  // bottom left
-	-0.5,  0.5, 0.0   // top left 
-}
-
-rect_i := [6]u32 {  
-	0, 1, 3,   
-	1, 2, 3    
 }
 
 main :: proc() {
@@ -81,9 +65,11 @@ main :: proc() {
 	for (!glfw.WindowShouldClose(window) && running) {
 
 		update()
+
 		draw()
 
 		glfw.SwapBuffers((window))
+
 		glfw.PollEvents()
 	}
 
@@ -93,28 +79,17 @@ main :: proc() {
 
 init :: proc(){
 
-	load_shaders(&vertex_shader_src, &fragment_shader_src)
+	load_shaders("./shaders/vs.glsl", "./shaders/fs.glsl")
 
 	gl.GenBuffers(1, &VBO)
 	gl.GenVertexArrays(1, &VAO)
-	if(!draw_triangle){
-		gl.GenBuffers(1, &EBO)
-	}
 
 	gl.BindVertexArray(VAO)
 
 	gl.BindBuffer(gl.ARRAY_BUFFER, VBO)
 
+	gl.BufferData(gl.ARRAY_BUFFER, size_of(triangle), &triangle, gl.STATIC_DRAW)
 
-	if (draw_triangle) {
-		// triangle
-		gl.BufferData(gl.ARRAY_BUFFER, size_of(triangle), &triangle, gl.STATIC_DRAW)
-	} else {
-		// rectangle
-		gl.BufferData(gl.ARRAY_BUFFER, size_of(rectangle), &rectangle, gl.STATIC_DRAW)
-		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, EBO)
-		gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, size_of(rectangle), &rect_i, gl.STATIC_DRAW)
-	}
 
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 3 * size_of(f32), uintptr(0))
 	gl.EnableVertexAttribArray(0)
@@ -122,6 +97,7 @@ init :: proc(){
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 	gl.BindVertexArray(0)
 
+	gl.ClearColor(0.2, 0.3, 0.3, 1.0)
 }
 
 update :: proc(){
@@ -135,7 +111,7 @@ update :: proc(){
 }
 
 draw :: proc(){
-	gl.ClearColor(0.2, 0.3, 0.3, 1.0)
+	
 	gl.Clear(gl.COLOR_BUFFER_BIT)
 
 	// Own drawing code here
@@ -148,15 +124,9 @@ draw :: proc(){
 	vertex_color_location := gl.GetUniformLocation(shader_program, "our_color")
 	gl.Uniform4f(vertex_color_location, 0.0, green_value, 0.0, 1.0)
 
-
-
 	gl.BindVertexArray(VAO)
 
-	if(draw_triangle) {
-		gl.DrawArrays(gl.TRIANGLES, 0, 3)
-	} else {//														  v what is this? v  ¯\_(ツ)_/¯
-		gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, rawptr(uintptr(0)))
-	}	
+	gl.DrawArrays(gl.TRIANGLES, 0, 3)
 
 }
 

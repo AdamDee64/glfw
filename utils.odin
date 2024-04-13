@@ -6,6 +6,10 @@ import str "core:strings"
 
 import gl "vendor:OpenGL"
 
+mark :: proc () {
+	fmt.print("MARK\n")
+}
+
 
 file_to_cstring :: proc(file : string) -> cstring {
    u8_data, success := os.read_entire_file(file)
@@ -19,7 +23,6 @@ file_to_cstring :: proc(file : string) -> cstring {
 	} else {
 		fmt.print("Could not open file:", file, "\n")
 	}
-
    return cstring("")
 }
 
@@ -33,29 +36,34 @@ log_shader_success :: proc(shader_id : u32, shader_success : i32) {
 	}
 }
 
-load_shaders :: proc(vs_src : [^]cstring, fs_src : [^]cstring) {
+load_shaders :: proc(vs_path : string, fs_path : string) {
 
 	shader_success : i32
 	
 	vertex_shader := gl.CreateShader(gl.VERTEX_SHADER)
-	gl.ShaderSource(vertex_shader, 1, vs_src, nil)
-	gl.CompileShader(vertex_shader)
-	gl.GetShaderiv(vertex_shader, gl.COMPILE_STATUS, &shader_success)
-	log_shader_success(vertex_shader, shader_success)
+	if vs_path != "" {
+		vs_src := file_to_cstring(vs_path)
+		gl.ShaderSource(vertex_shader, 1, &vs_src, nil)
+		gl.CompileShader(vertex_shader)
+		gl.GetShaderiv(vertex_shader, gl.COMPILE_STATUS, &shader_success)
+		log_shader_success(vertex_shader, shader_success)
+	}
 
 	fragment_shader := gl.CreateShader(gl.FRAGMENT_SHADER)
-	gl.ShaderSource(fragment_shader, 1, fs_src, nil)
+	fs_src := file_to_cstring(fs_path)
+	gl.ShaderSource(fragment_shader, 1, &fs_src, nil)
 	gl.CompileShader(fragment_shader)
 	gl.GetShaderiv(fragment_shader, gl.COMPILE_STATUS, &shader_success)
 	log_shader_success(fragment_shader, shader_success)
 	
 	shader_program = gl.CreateProgram()
-	gl.AttachShader(shader_program, vertex_shader)
+	if vs_path != ""{
+		gl.AttachShader(shader_program, vertex_shader)
+	}
 	gl.AttachShader(shader_program, fragment_shader)
 	gl.LinkProgram(shader_program)
 	gl.GetProgramiv(shader_program, gl.LINK_STATUS, &shader_success)
 	log_shader_success(shader_program, shader_success)
-
 	gl.DeleteShader(vertex_shader)
 	gl.DeleteShader(fragment_shader)
 
