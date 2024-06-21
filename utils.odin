@@ -36,8 +36,8 @@ log_shader_success :: proc(shader_id : u32, shader_success : i32) {
 	}
 }
 
-load_shaders :: proc(vs_path : string, fs_path : string) {
-
+load_shaders :: proc(vs_path : string, fs_path : string) -> u32 {
+	shader_id : u32
 	shader_success : i32
 	
 	vertex_shader := gl.CreateShader(gl.VERTEX_SHADER)
@@ -56,15 +56,16 @@ load_shaders :: proc(vs_path : string, fs_path : string) {
 	gl.GetShaderiv(fragment_shader, gl.COMPILE_STATUS, &shader_success)
 	log_shader_success(fragment_shader, shader_success)
 	
-	shader_program = gl.CreateProgram()
+	shader_id = gl.CreateProgram()
 	if vs_path != ""{
-		gl.AttachShader(shader_program, vertex_shader)
+		gl.AttachShader(shader_id, vertex_shader)
 	}
-	gl.AttachShader(shader_program, fragment_shader)
-	gl.LinkProgram(shader_program)
-	gl.GetProgramiv(shader_program, gl.LINK_STATUS, &shader_success)
-	log_shader_success(shader_program, shader_success)
+	gl.AttachShader(shader_id, fragment_shader)
+	gl.LinkProgram(shader_id)
+	gl.GetProgramiv(shader_id, gl.LINK_STATUS, &shader_success)
+	log_shader_success(shader_id, shader_success)
 	gl.DeleteShader(vertex_shader)
 	gl.DeleteShader(fragment_shader)
-
+	
+	return shader_id
 }
